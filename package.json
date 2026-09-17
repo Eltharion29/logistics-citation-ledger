@@ -1,0 +1,21 @@
+{
+  "name": "logistics-citation-ledger",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "setup": "tsx src/collection_setup.ts",
+    "start": "tsx src/citation_service.ts",
+    "test": "node --import tsx --test test/citation_collector.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "openai": "^5.12.2",
+    "zod": "^4.0.17"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.30",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3"
+  }
+}
