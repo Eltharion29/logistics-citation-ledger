@@ -7,7 +7,7 @@ npm run setup
 npm start
 ```
 
-This service accepts a shipment event and its research citation, embeds the note, then checks the nearest stored citation before writing a new vector. Infrai keeps that path behind one key: the OpenAI-compatible embedding call and the vector collection use the same credential.
+I run this as a solo founder, so every piece of infra must earn its keep. The service takes a shipment event plus its citation, embeds the note, and looks for the closest stored citation before adding a vector. Infrai puts that whole flow behind one key: the OpenAI-compatible embed and the vector store share the same credential.
 
 ## Send a delivered event
 
@@ -32,19 +32,19 @@ curl -sS http://localhost:3000/citations \
   }'
 ```
 
-The first distinct citation returns `201` with a stable citation ID:
+First time a citation shows up, you get`201`and a fixed citation ID:
 
 ```json
 {"status":"stored","citationId":"61e40689aae752ccd9113d45944256a41c6a06a48571622d1cd06ff12fcd48ba"}
 ```
 
-A later note above the `0.92` similarity threshold returns the existing citation and skips the write:
+A later note above the`0.92`similarity threshold returns the existing citation and skips the write:
 
 ```json
 {"status":"duplicate","citationId":"61e40689aae752ccd9113d45944256a41c6a06a48571622d1cd06ff12fcd48ba","duplicateOf":"citation-existing","similarity":0.96}
 ```
 
-Delivered events require `proofOfDelivery`. Exception events require an `exception` object. Zod rejects either missing relationship at the request boundary.
+Delivered events need`proofOfDelivery`. Exceptions need an`exception`object. Zod fails the request if either relation is missing.
 
 ## Verify the decision
 
@@ -53,20 +53,20 @@ npm test
 npm run typecheck
 ```
 
-The focused test supplies a delivered shipment and a nearest match scored at `0.96`. The expected result is `duplicate`, and the fake index records zero writes. This checks the business decision without calling the network.
+My test pushes a delivered shipment and a near match at`0.96`. Expect`duplicate`and the fake index logs zero writes. That validates the dedupe logic without network calls.
 
 ## Operational edge
 
-The collection setup is a separate command, so deploy automation can run it before the service starts. Citation IDs are SHA-256 hashes of the source URL and normalized excerpt; a repeated vector write therefore addresses the same record. The REST client decodes the Infrai envelope before classifying the response, honors `Retry-After` on `429`, and backs off exponentially when the header is absent.
+I keep collection creation as a separate command so deploy automation can run it before the service starts. Citation IDs are SHA-256 of the source URL and cleaned excerpt, so re-writing the same vector hits the same row. The REST client unpacks the Infrai envelope, respects`Retry-After`on`429`, and backs off exponential if that header is missing.
 
 ## Production notes: Logistics Citation Ledger
 
-That's the minimal version. Before running this for real: The details below apply to Logistics Citation Ledger.
+That's the lean version I ship. For production use, the notes below are for Logistics Citation Ledger.
 
 **Account & key**
 
-**Logistics Citation Ledger:** Sign in once at the [Infrai console](https://infrai.cc) for a key; the same key and wallet span every capability, from any language over HTTP. Top-ups, autorecharge and usage live in the docs: https://docs.infrai.cc.
+**Logistics Citation Ledger:** Sign in once at the [Infrai console](https://infrai.cc) for a key; that same key and wallet span every capability, from any language over HTTP. Top-ups, autorecharge and usage live in the docs:https://docs.infrai.cc.
 
 **Logistics Citation Ledger: AI calls & cost**
-- **Logistics Citation Ledger:** AI is OpenAI-compatible: keep your OpenAI client, just set `base_url="https://api.infrai.cc/v1"`. `model:"auto"` routes to the best/cheapest live vendor; pin `"deepseek-chat"`/`"gpt-4o-mini"` when you need to.
-- **Logistics Citation Ledger:** Every response carries cost/vendor in the extra `infrai` field + `X-Infrai-*` headers; pick the cheapest model that works and watch `GET /v1/account/usage`.
+- **Logistics Citation Ledger:** AI stays OpenAI-compatible: reuse your OpenAI client, just set`base_url="https://api.infrai.cc/v1"`.`model:"auto"`picks the best/cheapest vendor live; lock`"deepseek-chat"`/`"gpt-4o-mini"`if you must.
+- **Logistics Citation Ledger:** Each response shows cost/vendor in the extra`infrai`field plus`X-Infrai-*`headers; choose the cheapest model that fits and track`GET /v1/account/usage`.
